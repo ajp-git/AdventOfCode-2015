@@ -1,0 +1,2179 @@
+use std::str::Chars;
+
+fn santa_global(text: &str) -> u32 {
+    text.split("\n").filter(|w| santa(w) == 1).count() as u32
+}
+
+fn santa(text: &str) -> u32 {
+    print!("\nLooking at {}", text);
+
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    struct Pair {
+        a: char,
+        b: char,
+    }
+    let mut pairs: Vec<Pair> = Vec::new();
+    let vtext: Vec<char> = text.trim().chars().collect();
+    let mut bpair = false;
+
+    /*It contains a pair of any two letters that appears at least twice in the string without overlapping,
+    like xyxy (xy) or aabcdefgaa (aa),
+    but not like aaa (aa, but it overlaps).
+    */    // create all pairs
+    let mut last_pair_added = Pair{a: vtext[0], b: vtext[1]};
+    pairs.push(last_pair_added.clone());
+    let mut last_pair_added_at =1;
+    
+    for mut i in 2..vtext.len() {
+            // ab c
+            // Si ab existe, on incrémente.
+            // si a=b=c alors on décale le pointeur de +1
+            let pair_to_find = Pair {
+                a: vtext[i - 1],
+                b: vtext[i],
+            };
+            
+            // On recherche si cette paire est déjà dans le vecteur
+            // Si oui, on passe cette paire
+            if last_pair_added != pair_to_find {
+                for pair in pairs.clone() {
+                    if pair_to_find == pair {
+                        i += 1;
+                        print!("\tReal Pair {},{}", pair.a, pair.b);
+                        bpair = true;
+                        break;
+                    }
+                }
+    
+                // On enregistre (ab)
+                if !pairs
+                .iter()
+                .any(|&p| p == pair_to_find) {
+                    pairs.push(Pair {
+                        a: pair_to_find.a,
+                        b: pair_to_find.b,
+                    });
+                    last_pair_added=Pair{a:pair_to_find.a, b:pair_to_find.b};
+                    last_pair_added_at=i;
+                }
+    
+            }
+            if last_pair_added_at <i {
+                last_pair_added=Pair{a:' ',b:' '};
+            }
+ //       }
+
+ //       }
+
+
+    }       // si 
+            //        println!("{:?}", pairs);
+    /*It contains at least one letter which repeats
+    with exactly one letter between them,
+    like xyx, abcdefeghi (efe), or even aaa.
+    */
+    if !bpair {
+        return 0;
+    }
+    let mut one_surrounded = false;
+    for i in 2..vtext.len() {
+        if vtext[i - 2] == vtext[i] {
+            one_surrounded = true;
+            print!("\tSurrounded {one_surrounded} : {}{}{}", vtext[i-2], vtext[i-1], vtext[i]);
+
+            break;
+        }
+    }
+
+    if one_surrounded {
+        return 1;
+    }
+    0
+}
+
+fn santa_day5_1(text: &str) -> u32 {
+    println!("\nAnalysing {text}");
+    let clean_text = text.trim();
+    let not_find = ["ab", "cd", "pq", "xy"];
+    if not_find
+        .into_iter()
+        .filter(|w| clean_text.contains(w))
+        .count()
+        > 0
+    {
+        println!("\t --Rejected : Found forbidden string");
+        return 0;
+    }
+    let mut double = 0;
+    let vtext = clean_text.chars().into_iter().collect::<Vec<char>>();
+    for i in 1..clean_text.len() {
+        if vtext[i] == vtext[i - 1] {
+            double = 1;
+            println!("\t Validated : Double found {}{}", vtext[i - 1], vtext[i]);
+            break;
+        }
+    }
+    let vow = ['a', 'e', 'i', 'o', 'u'];
+    let mut vow_count = 0;
+    for i in 0..vtext.len() {
+        for v in 0..5 {
+            if let Some(vow_char) = vow.get(v) {
+                if vtext[i] == *vow_char {
+                    vow_count = vow_count + 1;
+                }
+            }
+        }
+    }
+    if vow_count >= 3 {
+        println!("\t Validated : {vow_count} vowels");
+    }
+    if vow_count >= 3 && double == 1 {
+        println!("\t --Accepted");
+        return 1;
+    }
+    println!("\t --Rejected");
+
+    0
+}
+
+fn main() {
+    println!("S : {}", santa("text"));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn dotest(paq: &str, expected: u32) {
+        let actual = santa_global(paq);
+        assert!(
+            actual == expected,
+            "Test failed with \nExpected {expected:?} but got {actual:?}"
+        )
+    }
+    #[test]
+    fn fixed_tests() {
+        dotest("urrvucyrzzzooxhx", 0); // Looking at         urrvucyrzzzooxhx	Real Pair z,z	Surrounded true : zzz
+        dotest("urrvucyrzzzzooxhx", 1); // Looking at         urrvucyrzzzooxhx	Real Pair z,z	Surrounded true : zzz
+        dotest("xxxx", 1); // is not nice overlap.
+        dotest("qjhvhtzxzqqjkmpb", 1); //is nice because is has a pair that appears twice (qj) and a letter that repeats with exactly one letter between them (zxz).
+        dotest("xxyxx\nxxyxx\nabcdefgrth\nxxyxx\nxxyxx\nxxyxx", 5);
+        dotest("uurcxstgmygtbstg", 0); // 
+        dotest("ieodomkazucvgmuy", 0); // 
+    }
+    #[test]
+    fn com_tests(){
+        dotest(
+            "rthkunfaakmwmush
+                                       qxlnvjguikqcyfzt
+                                       sleaoasjspnjctqt
+                                       lactpmehuhmzwfjl
+                                       bvggvrdgjcspkkyj
+                                       nwaceixfiasuzyoz
+                                       hsapdhrxlqoiumqw
+                                       lsitcmhlehasgejo
+                                       hksifrqlsiqkzyex
+                                       dfwuxtexmnvjyxqc
+                                       iawwfwylyrcbxwak
+                                       mamtkmvvaeeifnve
+                                       qiqtuihvsaeebjkd
+                                       skerkykytazvbupg
+                                       kgnxaylpgbdzedoo
+                                       plzkdktirhmumcuf
+                                       pexcckdvsrahvbop
+                                       jpocepxixeqjpigq
+                                       vnsvxizubavwrhtc
+                                       lqveclebkwnajppk
+                                       ikbzllevuwxscogb
+                                       xvfmkozbxzfuezjt
+                                       ukeazxczeejwoxli
+                                       tvtnlwcmhuezwney
+                                       hoamfvwwcarfuqro
+                                       wkvnmvqllphnsbnf
+                                       kiggbamoppmfhmlf
+                                       ughbudqakuskbiik
+                                       avccmveveqwhnjdx
+                                       llhqxueawluwmygt
+                                       mgkgxnkunzbvakiz
+                                       fwjbwmfxhkzmwtsq
+                                       kzmtudrtznhutukg
+                                       gtvnosbfetqiftmf
+                                       aoifrnnzufvhcwuy
+                                       cldmefgeuwlbxpof
+                                       xdqfinwotmffynqz
+                                       pajfvqhtlbhmyxai
+                                       jkacnevnrxpgxqal
+                                       esxqayxzvortsqgz
+                                       glfoarwvkzgybqlz
+                                       xdjcnevwhdfsnmma
+                                       jyjktscromovdchb
+                                       pvguwmhdvfxvapmz
+                                       iheglsjvxmkzgdbu
+                                       lwjioxdbyhqnwekv
+                                       zcoguugygkwizryj
+                                       ogvnripxxfeqpxdh
+                                       hkvajhsbfnzsygbm
+                                       cnjqeykecopwabpq
+                                       wojjtbcjinoiuhsj
+                                       kpwpvgxbyzczdzjq
+                                       wrvhylisemlewgzk
+                                       uiezkmnhilfzahtm
+                                       mucteynnuxpxzmvt
+                                       zaiwbgxefusfhmst
+                                       apptbogpxivjwink
+                                       qryboarjtwjhjgjb
+                                       irehxupgyseaahzd
+                                       fobstqxguyubggoh
+                                       ysriumfghtxtfxwe
+                                       auchdmasvfeliptw
+                                       mztuhefcrnknyrdl
+                                       tyjmkhihbwabjtaa
+                                       yquzkdtgsljkaebw
+                                       almvdvofjtkyzbmd
+                                       emqftiuqqpdwwbrv
+                                       hrrhmqfpepvbawvw
+                                       atrkgykycvgxbpyb
+                                       dhthetnealksbdan
+                                       zzqafhgicubptiyo
+                                       qdtaieaziwhbttnw
+                                       kyskgapdgqrtrefw
+                                       edwzlpqztpydmdlr
+                                       awszjnlmvlyqsuvl
+                                       kcrtmtshtsgixvcp
+                                       jtaskgkijivbbkri
+                                       mmggfwapsetemiuj
+                                       itagrrnjbnmhgppd
+                                       uqmbezechbrpbnqq
+                                       nnyimvtascflpzsa
+                                       knqeimypkdttyudj
+                                       vgoiyvtvegwyxjjd
+                                       qubzdxsbecktzrho
+                                       zehojtvktsbbxijb
+                                       xepmjrekwcgoxyoh
+                                       bnptxnocbpbqbyeq
+                                       sfvynsywscbnymos
+                                       dsltfbpcmffbluba
+                                       kncrlzlmkikylppa
+                                       siwudrvmildgaozv
+                                       jhhefbvbvneqzvtc
+                                       lqjgztxitbuccqbp
+                                       himmwlbhjqednltt
+                                       vwognchyertnnfil
+                                       eejakhapkbodrntf
+                                       qxuijkkhhlskgrba
+                                       aankpfxxicfpllog
+                                       vuxykvljyqexfhrn
+                                       epgygflbxlbwybzq
+                                       zuxmwvetmvcszayc
+                                       xttwhfqmemgtjnkf
+                                       hftwldmivyfunfvl
+                                       bejlyxfamzliilrj
+                                       zkehazcxyyvtrxti
+                                       dsgafehmcfpycvgz
+                                       igremmqdojqdvwmb
+                                       swnjzvmhcslvkmiw
+                                       fchzbfbmtqtxmaef
+                                       xwjmyyrlznxrcytq
+                                       brwcwzpcvbwdrthl
+                                       fvrlridacsiojdmb
+                                       mhsturxdlmtxozvy
+                                       usxvqyrwywdyvjvz
+                                       gwazuslvmarfpnzm
+                                       rgkbudaqsnolbcqo
+                                       dpxvlbtavdhdedkj
+                                       nnqmjzejhodyfgyd
+                                       ozoazxkfhujgtzvy
+                                       psdgvhzdiwnuaxpl
+                                       tznkilxpogbzgijz
+                                       wnpytcseirtborhh
+                                       lhauurlfsmagfges
+                                       oqfbzixnlywkzwwy
+                                       yoehapoyjpakziom
+                                       vtjftdcsfdzbmtrn
+                                       zcshfnodiwixcwqj
+                                       wapbxpaxgjvtntkm
+                                       qfyypkyvblrtaenh
+                                       bsxhbxkovgukhcza
+                                       kitdmvpiwzdonoyy
+                                       slkbhxmehzavbdsf
+                                       dovzjouqkzkcmbkl
+                                       qpbigdcqkfnfkxvq
+                                       eaiaquhnesvtcdsv
+                                       mhbezlhqojdsuryj
+                                       dqprkkzxlghkoccx
+                                       xqepmorryeivhrhm
+                                       frwmrjpezwmjflvf
+                                       gjpfgwghodfslwlf
+                                       fzyvajisdjbhfthq
+                                       pvzxkxdscdbilrdb
+                                       mtaxmqcnagmplvnm
+                                       rlyafujuuydrqwnc
+                                       gvqvrcxwyohufehq
+                                       lmrkircgfrfusmfd
+                                       ovlpnkxcpimyaspb
+                                       xhyjremmqhdqywju
+                                       pxfczlhpzbypfarm
+                                       utjhprzhtggausyp
+                                       utzkkzlnyskjtlqh
+                                       cecbcnxpazvkedic
+                                       xwvoaggihrbhmijq
+                                       krredhmtwlfmyagw
+                                       lwfhxgbknhwudkzw
+                                       vyczyvuxzmhxmdmn
+                                       swcoaosyieqekwxx
+                                       waohmlfdftjphpqw
+                                       gaclbbfqtiqasijg
+                                       ybcyaxhluxmiiagp
+                                       xgtxadsytgaznndw
+                                       wzqhtjqpaihyxksm
+                                       fdwltsowtcsmsyhm
+                                       rpoelfbsararhfja
+                                       tswgdacgnlhzwcvz
+                                       xjgbhdlxllgeigor
+                                       ksgthvrewhesuvke
+                                       whgooqirdjwsfhgi
+                                       toztqrxzavxmjewp
+                                       hbkayxxahipxnrtl
+                                       lazimkmdnhrtflcu
+                                       ndoudnupbotwqgmr
+                                       niwuwyhnudxmnnlk
+                                       hlmihzlrpnrtwekr
+                                       wzkttdudlgbvhqnc
+                                       rfyzzgytifkqlxjx
+                                       skddrtwxcyvhmjtb
+                                       mljspkvjxbuyhari
+                                       xwkhozaoancnwaud
+                                       nookruxkdffeymdz
+                                       oiqfvpxmcplyfgoa
+                                       qoxggshmrjlzarex
+                                       lsroezewzkrwdchx
+                                       nkoonmvdydgzspcl
+                                       lygxeqztdqklabov
+                                       jempjyzupwboieye
+                                       hpdaqkhjiddzybly
+                                       cvcizjlnzdjfjlbh
+                                       vaaddsbkcgdjhbkj
+                                       pjxmtxoyrkmpnenf
+                                       ujqdvyqnkbusxlps
+                                       miyvzkzqploqaceb
+                                       gapcsbkulicvlnmo
+                                       xqpcyriqhjhaeqlj
+                                       ipumdjwlldzqhmgh
+                                       swdstecnzttmehxe
+                                       ucmqordmzgioclle
+                                       aywgqhmqlrzcxmqx
+                                       ptkgyitqanvjocjn
+                                       wcesxtmzbzqedgfl
+                                       rnetcouciqdesloe
+                                       chpnkwfdjikqxwms
+                                       onpyrjowcuzdtzfg
+                                       tydnqwaqwkskcycz
+                                       dhamguhmkjzzeduy
+                                       oecllwyrlvsyeeuf
+                                       gsukajpoewxhqzft
+                                       sgdnffdixtxidkih
+                                       pqqzjxzydcvwwkmw
+                                       wnjltltufkgnrtgm
+                                       hylaicyfrqwolnaq
+                                       ovfnugjjwyfjunkm
+                                       xknyzsebmqodvhcl
+                                       uwfmrjzjvvzoaraw
+                                       zaldjvlcnqbessds
+                                       zphvjuctrsksouvz
+                                       ceqbneqjwyshgyge
+                                       wmelhaoylbyxcson
+                                       nghuescieaujhgkj
+                                       dhjmflwwnskrdpph
+                                       exvanqpoofjgiubf
+                                       aidkmnongrzjhsvn
+                                       mdbtkyjzpthewycc
+                                       izctbwnzorqwcqwz
+                                       hrvludvulaopcbrv
+                                       mrsjyjmjmbxyqbnz
+                                       sjdqrffsybmijezd
+                                       geozfiuqmentvlci
+                                       duzieldieeomrmcg
+                                       ehkbsecgugsulotm
+                                       cymnfvxkxeatztuq
+                                       bacrjsgrnbtmtmdl
+                                       kbarcowlijtzvhfb
+                                       uwietqeuupewbjav
+                                       ypenynjeuhpshdxw
+                                       fwwqvpgzquczqgso
+                                       wjegagwkzhmxqmdi
+                                       vocvrudgxdljwhcz
+                                       nnytqwspstuwiqep
+                                       axapfrlcanzgkpjs
+                                       lklrjiszochmmepj
+                                       gxadfpwiovjzsnpi
+                                       qidsjxzgwoqdrfie
+                                       wgszciclvsdxxoej
+                                       kwewlmzxruoojlaq
+                                       ywhahockhioribnz
+                                       ucbqdveieawzucef
+                                       mdyyzmfoaxmzddfv
+                                       hsxnabxyqfzceijv
+                                       vivruyvbrtaqeebr
+                                       jxfeweptjtgvmcjc
+                                       mmypqxmpurhculwd
+                                       mpiaphksvctnryli
+                                       xqzqnuxmuzylkkun
+                                       fndmtefjxxcygtji
+                                       dnorqlldvzqprird
+                                       nutokyajmjpwjaqu
+                                       vlupfperqyqkjcaj
+                                       dgihjeokrphkpdnk
+                                       nvbdyrlheqzixuku
+                                       mhrkntnxvsmvrpka
+                                       kvhkyanlhhymwljf
+                                       fhipumtegqfgeqqw
+                                       vpfjgveycdefuabu
+                                       kzincljffncylcsf
+                                       tsezxymwmjtyegqw
+                                       wxhcdrqedkdcwxli
+                                       ueihvxviirnooomi
+                                       kfelyctfvwyovlyh
+                                       horzapuapgtvzizz
+                                       iiqkdpmfvhwwzmtj
+                                       rsaclclupiicstff
+                                       quwkkhrafypkaoum
+                                       gyrgkgmwqfkeudfe
+                                       noydhbqacwptyfmy
+                                       efwwuipzgtkwffhf
+                                       suyojcitomdxsduh
+                                       lbcxnsykojkufkml
+                                       zpglsvoutvzkgdep
+                                       usgrufyvgsbsmbpr
+                                       katrrwuhwvunjqor
+                                       btngwrpcxoyfbgbc
+                                       bxjscjdiowjrkpns
+                                       nwxvnfrnlkgqxvhf
+                                       ikhyqkvljucgdlag
+                                       xibnxsjopmxvflkl
+                                       mzplumcfivqcjqnz
+                                       jqflcxoxzlbwlxry
+                                       fcscvmfepdxrshxe
+                                       wlpffwunffklzbuc
+                                       emvrlqajjgwzfmle
+                                       rhaheurtzrfoqkyq
+                                       ifuuhpxmadaysfsx
+                                       ncyfvleyzqntpcoo
+                                       zeogmyaqccmtvokd
+                                       jqppbzebppdnpurn
+                                       xixarswxsiwjzgni
+                                       ezruwzajsoombphs
+                                       hmiqfeizyprielxf
+                                       jnaoxljnftymsfey
+                                       extgzrxzovlsixnf
+                                       yhyfmovvlrwoezsv
+                                       ffnybaolppuzpjym
+                                       pqowimdiusccaagn
+                                       jgceiosiihpjsmnu
+                                       hkoexeaopebktngx
+                                       njhzuvsygymejqav
+                                       yjkgcclgtvushcfk
+                                       gmbjxhnkkxlihups
+                                       pdlwysadiebsidjz
+                                       omrwmgzulfoaqros
+                                       ofvvgdezwvcffdcy
+                                       otytpuklhxcpxhgd
+                                       eyfaosxdauumvlux
+                                       mvdthjfstrlqlyuo
+                                       mdgdchgnlxaxspdm
+                                       bakjezmhbwqxzevd
+                                       msakswaphdwaodhg
+                                       vjcqscgdbnsxdllh
+                                       jjywaovewbuzreoj
+                                       nqvplhwacylifvwk
+                                       lpwmpixbxysmsign
+                                       flcvbpxrchcpbgcb
+                                       qjpkeuenenwawlok
+                                       bnqkflfmdmntctya
+                                       fzsgzpoqixvpsneq
+                                       icwfdisutoilejld
+                                       relchofohnkwbumi
+                                       aljalgdaqwhzhfwr
+                                       cahkvnwnbwhodpqs
+                                       dnrzeunxiattlvdm
+                                       nsmkhlrpwlunppjs
+                                       mqqsexlwfqnogwub
+                                       tfavelkqrtndpait
+                                       ooguafrnmprfxcnz
+                                       ntynkiordzxtwrqa
+                                       rkkyzlxekqqlkvym
+                                       ofxcivdnwcmgfnme
+                                       ywotqwbrqxlrnobh
+                                       nrbbiypwhrqihvev
+                                       flqsjixxtydheufs
+                                       lcfrfzypstrqctja
+                                       hyzbuzawuzjrynny
+                                       exfbywcnstebnvmq
+                                       vydzwnbmcihvqrnj
+                                       qmwqaaylinzrdmiw
+                                       lpxpztpvfggspeun
+                                       lhxmqqbracsuyrfm
+                                       zgkwsrabaseidbrw
+                                       yjlmbhbqsqgszsun
+                                       mqfzqtbxtuteabtd
+                                       izomzdmcqmfrevwd
+                                       iqijrlqurdwrkoln
+                                       fxhqzpgoxxjkkhql
+                                       oulwontmgrjeopnk
+                                       edaigfydjexvzzvj
+                                       vjhybiklxpxjqpwc
+                                       ypxfbfnpbmqmwtte
+                                       xzvcsgasztrxdzud
+                                       rpulqmobptfarboo
+                                       palacmdijxzzykrf
+                                       jmllwukplufohiby
+                                       dnswayomusiekfmy
+                                       sxbrjqtqgzzwhcfo
+                                       lylvndsgbnbqiejm
+                                       jaxxhoulxnxnaenr
+                                       nblissutfazbcpwn
+                                       zmlsjszzldvbiacr
+                                       kewojtlchfkclqwk
+                                       eqvfjasddggvfame
+                                       yibzqlvxtraxpdon
+                                       dgnbxsbmdrtyvaac
+                                       uoxrcxfimhgtxqhy
+                                       xfdxalrwcwudlviq
+                                       xmtbdklqptoswpwl
+                                       zezyopzdztdjerfl
+                                       xuzluhjsqvhytgbc
+                                       qdjtmeckispmgzki
+                                       phakupesplzmmmvc
+                                       gpuoqfffumzszybn
+                                       bhywxqkrrlwuebbw
+                                       ibvwgoyvelzenkzl
+                                       ncohvvbmiekbaksa
+                                       fzuvqzvxvdbeirrp
+                                       lshtzniokucwojjd
+                                       punrduvlnrulkium
+                                       gnfpikidnfobrrme
+                                       vxkvweekmnvkzgyl
+                                       rhydssudkcjlqgxn
+                                       cjtqvlaahohcgumo
+                                       jwzmfyinsfwecgcb
+                                       blpeseqhlzfilpuf
+                                       jvtpjkyokzcvagon
+                                       qjomincbcobjczpe
+                                       ugsyzkzgdhxtmsfz
+                                       hleaqgwzqjwajcra
+                                       coumfghptpnxvvov
+                                       hqpnbupnzwpdvgqd
+                                       cpouyodqxgviasem
+                                       lljvxeyozckifhfd
+                                       huqtnvutdyfgwtwa
+                                       yenlveuynmlmmymu
+                                       ojdyufkomxiwjmbf
+                                       spjzgvcwvzgffjkk
+                                       vxykmjhyvmhyssbp
+                                       tazdeqggfcjfvwwn
+                                       uumwcngwcytvpufx
+                                       avovuzkrevloneop
+                                       owczrtbnrvjfemkt
+                                       hzpugcanaxyvaokj
+                                       iishlodnxvjtgzyn
+                                       qosdonclrnxirham
+                                       eonqlnwevahydddg
+                                       ryqmnuikftlxuoqy
+                                       whqepbcwabzbthha
+                                       vekisvnwhgpyemxr
+                                       lrwxzoamnvpnlhap
+                                       ywepvqthnorfswjv
+                                       evqwvsoazmwyypjy
+                                       bgwoojddubppmjxf
+                                       jypkfrthzgtyeddi
+                                       tynabbhfjzkrqsju
+                                       adxstbfqheuqbcuk
+                                       gqwqiocdyqoiblrx
+                                       ybuddlyuskdlegxv
+                                       luwynbsmpgyeqsbr
+                                       ltyqgqoyljibqndo
+                                       jaedpajzphfybajh
+                                       epglnrxofptsqvmy
+                                       zjdpxkngfkstxbxh
+                                       ekegphcwanoickfu
+                                       cqvhuucvejqirvfs
+                                       uqudnnqumsqcgefo
+                                       qnzunermlnpcfflo
+                                       ovyxaniqaawzfuxx
+                                       djekxcezjowdhopq
+                                       bwtwbmdehrhpjnlk
+                                       nilsnlacerweikfa
+                                       hyrigsrmsrzcyaus
+                                       gvmdmgddduylmxic
+                                       ewzovdblhmjgjwsk
+                                       ojjfsknlonzguzlq
+                                       yjgfruvpjvlvrvvq
+                                       cyoryodwyhzwprbv
+                                       crsjclrurcquqgut
+                                       sjhfhobwtojxcmem
+                                       ibxfjudilmdeksea
+                                       uqbhdbjoeupyhbcz
+                                       uqbxigzxuxgmjgnw
+                                       jashafmtzrhswirg
+                                       dexiolovaucyooka
+                                       czjbwwnlwcoqnoiu
+                                       ojigosazigfhttjc
+                                       zfiqtgrqbmftknzn
+                                       dlzbmvmolssbqlzl
+                                       sgmchcurrutdtsmw
+                                       scdwjqsdohcdrwry
+                                       cgtdvecqwplpprxn
+                                       iiplenflfczaktwi
+                                       wmgnwfxfcjhyeiqg
+                                       giihshowtcatecvl
+                                       nqhzfincclumvkaz
+                                       kxstpzgdfvepionc
+                                       agbhxcijxjxerxyi
+                                       hmgfqevgdyvisyvs
+                                       tthakmvpowpvhtao
+                                       ottalcghygpaafbo
+                                       aplvozayycremgqg
+                                       dbjxlnaouxqtdpfz
+                                       peeyallzjsdvpalc
+                                       ndtdjyboixuyhfox
+                                       llabnbcobexfoldn
+                                       cweuvfnfyumbjvxr
+                                       ewkhhepaosalnvkk
+                                       pivyiwsiqpwhagyx
+                                       auzsnwdcerfttawt
+                                       grbfrekupciuzkrt
+                                       byfwzadtzrbndluf
+                                       lluypxjeljzquptk
+                                       pskwsnhqanemtfou
+                                       sxvrtqqjdjkfhhrm
+                                       ulsmqgmshvijyeqh
+                                       qigofesfhekoftkf
+                                       zhatniakqtqcxyqa
+                                       uuczvylgnxkenqee
+                                       mlitvtuxknihmisc
+                                       srrtrxdvcokpyfmz
+                                       osispuucklxcfkeb
+                                       vqhazlaulmnpipql
+                                       umkiueljberqhdig
+                                       knvpbkbvgoqzwprp
+                                       nbsocqikhuvsbloj
+                                       wjnpepjkzkednqbm
+                                       agbhmytsofuyqcor
+                                       gvogzhkkpxyfecko
+                                       ardafguxifeipxcn
+                                       yiajcskbgykyzzkw
+                                       sejunbydztyibnpq
+                                       dqrgfggwcnxeiygy
+                                       xnqqwilzfbhcweel
+                                       jjtifhlvmyfxajqi
+                                       gwszrpgpmbpiwhek
+                                       kydzftzgcidiohfd
+                                       efprvslgkhboujic
+                                       kecjdfwqimkzuynx
+                                       rildnxnexlvrvxts
+                                       dlnhjbqjrzpfgjlk
+                                       qluoxmzyhkbyvhub
+                                       crydevvrjfmsypbi
+                                       dosaftwumofnjvix
+                                       pwsqxrfwigeffvef
+                                       nzyfmnpwqyygjvfx
+                                       iccbckrkxlwjsjat
+                                       bmputypderxzrwab
+                                       bhuakynbwnlreixb
+                                       qmrzfyqjiwaawvvk
+                                       juvtixbkwyludftn
+                                       zapmjxmuvhuqlfol
+                                       paiwrqjhpjavuivm
+                                       tsepfbiqhhkbyriz
+                                       jpprewufiogxoygk
+                                       mmapyxbsugcsngef
+                                       pduhmgnepnpsshnh
+                                       aetndoqjvqyjrwut
+                                       fnfvlorhwpkkemhz
+                                       gedfidpwvoeazztl
+                                       beclvhospgtowaue
+                                       wsclsvthxustmczm
+                                       tjbxhnpniuikijhe
+                                       rhetyhvfcemponeg
+                                       mavonujurprbeexi
+                                       argbrpomztrdyasa
+                                       bzvtffbtygjxmkvh
+                                       maqyqkhsqgzfzvve
+                                       seeirbiynilkhfcr
+                                       wxmanwnozfrlxhwr
+                                       dieulypsobhuvswb
+                                       nxevassztkpnvxtb
+                                       jclxuynjsrezvlcy
+                                       xlolzyvgmwjsbmyf
+                                       tguzoeybelluxwxc
+                                       fkchoysvdoaasykz
+                                       cyynwbfcqpqapldf
+                                       rhifmzpddjykktuy
+                                       ndvufsyusbxcsotm
+                                       txutnzvdsorrixgg
+                                       qjoczhukbliojneu
+                                       ufhwujotncovjjsz
+                                       kclsgsdwcrxsycbr
+                                       yscwmlrdaueniiic
+                                       nxhivrovpkgsmugb
+                                       fdxqfyvwwvgeuqkv
+                                       femtamfylysohmpr
+                                       amsyzslvyxsoribh
+                                       nhmqxncwsonhgbcz
+                                       uomqsvcbpthlmcue
+                                       kxtfapcqrnjkkslj
+                                       xtieihonlfubeync
+                                       adpcjqxgydulchgj
+                                       cjynnzsmmujsxxpd
+                                       neeapmzweidordog
+                                       szoivgqyqwnyjsnk
+                                       uwgrtzaqezgphdcu
+                                       ptpgttqxocjwxohi
+                                       fhltebsizfwzpgpf
+                                       emmsazsidspkhgnh
+                                       dxcprkbcjeqxqzgn
+                                       tpxzqwxbzwigdtlt
+                                       afsmksnmzustfqyt
+                                       xyehnftstacyfpit
+                                       vcrfqumhjcmnurlw
+                                       rrznpjzcjgnugoch
+                                       gbxnzkwsjmepvgzk
+                                       jwobshgwerborffm
+                                       zmuvfkhohoznmifs
+                                       buyuwgynbtujtura
+                                       bevncenmpxfyzwtf
+                                       hqqtcrhzfsrcutjh
+                                       kbpzshllpiowepgc
+                                       alspewedcukgtvso
+                                       xvsvzzdcgjuvutrw
+                                       pmwulqraatlbuski
+                                       abuzsiinbueowpqn
+                                       oedruzahyfuchijk
+                                       avhcuhqqjuqkesoq
+                                       azqgplkzsawkvnhb
+                                       rjyoydogkzohhcvx
+                                       aezxwucqvqxuqotb
+                                       kxobnsjvzvenyhbu
+                                       nnjoiilshoavzwly
+                                       aijttlxjrqwaewgk
+                                       cvsaujkqfoixarsw
+                                       zngtoacpxcsplgal
+                                       qhkxliqtokvepcdv
+                                       aixihrtdmxkfvcqw
+                                       owbgdgdymxhhnoum
+                                       tajsagmruwzuakkd
+                                       ckrfduwmsodeuebj
+                                       alfdhuijuwyufnne
+                                       xpchlkijwuftgmnm
+                                       rwcrvgphistiihlg
+                                       xdaksnorrnkihreq
+                                       akeschycpnyyuiug
+                                       rgputhzsvngfuovz
+                                       lerknhznuxzdhvre
+                                       mqiqmyladulbkzve
+                                       csnmupielbbpyops
+                                       kwgrwgmhfzjbwxxz
+                                       npwtvbslvlxvtjsd
+                                       zxleuskblzjfmxgf
+                                       hexvporkmherrtrn
+                                       rhtdhcagicfndmbm
+                                       qhnzyuswqwoobuzz
+                                       dpvanjuofrbueoza
+                                       kjcqujmnhkjdmrrf
+                                       gholddsspmxtpybg
+                                       jihlvyqdyzkshfsi
+                                       zuviqmuqqfmtneur
+                                       kzexjowatvkohrtx
+                                       wgijnfhibsiruvnl
+                                       zevkrkmhsxmicijb
+                                       khxrcteqourjvoxa
+                                       ylpxlkcnenbxxtta
+                                       zrfsvctbojjkpvtw
+                                       nlzbudxibnmcrxbt
+                                       cqnscphbicqmyrex
+                                       ywvdohheukipshcw
+                                       riwatbvjqstubssf
+                                       idlztqqaxzjiyllu
+                                       sdpdgzemlqtizgxn
+                                       rjtbovqlgcgojyjx
+                                       fnfrfwujmjwdrbdr
+                                       osnppzzmrpxmdhtj
+                                       ljhwngclvydkwyoe
+                                       chwqkrkzrvjwarat
+                                       jmydkwpibkvmqlgs
+                                       zvhfmbxnlxtujpcz
+                                       jsnhsphowlqupqwj
+                                       fzhkkbpasthopdev
+                                       jerntjdsspdstyhf
+                                       gctwmaywbyrzwdxz
+                                       xemeaiuzlctijykr
+                                       xulrqevtbhplmgxc
+                                       yfejfizzsycecqpu
+                                       gboxrvvxyzcowtzm
+                                       lpvhcxtchwvpgaxp
+                                       wdiwucbdyxwnjdqf
+                                       qgwoqazzjlvnjrwj
+                                       prtlnkakjfqcjngn
+                                       fagvxsvjpuvqxniz
+                                       xacmxveueaakfbsm
+                                       ginvtonnfbnugkpz
+                                       qpvggsppewfzvwin
+                                       reoqnlzruyyfraxa
+                                       kolwtqhifjbbuzor
+                                       vrkcywvdhdprztww
+                                       ngdvyfmvjqhbzbxt
+                                       rooxeoilqzqjunmp
+                                       efxmdprtogtxgyqs
+                                       qrhjuqndgurcmwgu
+                                       ouitjprueefafzpl
+                                       kirdwcksqrbwbchp
+                                       fpumsmogojuywezo
+                                       lgjrgykywugzjees
+                                       xigioqcpjabpbdas
+                                       ewkhuprpqzikmeop
+                                       fgrgxsqeducigxvr
+                                       bclkursnqkzmjihl
+                                       jozidniwvnqhvsbc
+                                       oghcilcyozrmmpta
+                                       xbgmaungzcpasapi
+                                       iqowypfiayzbcvhv
+                                       opdehgwdgkocrgkf
+                                       zfzvdjeinlegcjba
+                                       vhakxvlcayuzukap
+                                       xyradgyiebpevnwe
+                                       eamhtflgedwyshkn
+                                       igteqdgchjeulfth
+                                       kwsfkigxzpbgdxod
+                                       vapnpsbdboiewpzp
+                                       wbuqhjsngxpqshen
+                                       vxxilouxuytitwgm
+                                       cpnwlkwnkeanqnet
+                                       wdmbtqvvlowftvgb
+                                       wjtmcecpyqzwpbqg
+                                       jnxmoxdhvsphcdeg
+                                       wabxfxpotoywwodn
+                                       mwbsoxzlqpqobvvh
+                                       coktshbyzjkxnwlt
+                                       rzhnggpslwzvyqrp
+                                       dgzuqbzarbutlkfx
+                                       wunajaiiwgijfvjh
+                                       uotdbcgmsvbsfqlb
+                                       kxdtlgmqbccjqldb
+                                       ngmjzjwvwbegehfr
+                                       cvpsabqfpyygwncs
+                                       wqluvqlhdhskgmzj
+                                       rbveperybfntcfxs
+                                       fbmoypqdyyvqyknz
+                                       zxpgzwnvmuvkbgov
+                                       yexcyzhyrpluxfbj
+                                       ltqaihhstpzgyiou
+                                       munhsdsfkjebdicd
+                                       plecvjctydfbanep
+                                       kjrxnnlqrpcieuwx
+                                       zbcdtcqakhobuscf
+                                       kgovoohchranhmsh
+                                       llxufffkyvuxcmfx
+                                       tgaswqyzqopfvxtw
+                                       kojcqjkdpzvbtjtv
+                                       xggdlkmkrsygzcfk
+                                       vvitpsnjtdqwyzhh
+                                       gcqjuwytlhxsecci
+                                       vbsghygcsokphnrg
+                                       vejqximdopiztjjm
+                                       hudqtwmwkviiuslp
+                                       vwswfvpcwwpxlyry
+                                       gxmfiehdxptweweq
+                                       qjmekjdcedfasopf
+                                       pqyxdxtryfnihphf
+                                       felnavctjjojdlgp
+                                       hbimufguekgdxdac
+                                       dhxhtnqgfczywxlr
+                                       pssottpdjxkejjrh
+                                       edieanguabapxyig
+                                       sciinanyqblrbzbb
+                                       irxpsorkpcpahiqi
+                                       qsxecaykkmtfisei
+                                       ivfwlvxlbnrzixff
+                                       hqxzzfulfxpmivcw
+                                       vvbpaepmhmvqykdg
+                                       cetgicjasozykgje
+                                       wuetifzdarhwmhji
+                                       gaozwhpoickokgby
+                                       eldnodziomvdfbuv
+                                       favpaqktqaqgixtv
+                                       twbcobsayaecyxvu
+                                       lzyzjihydpfjgqev
+                                       wnurwckqgufskuoh
+                                       fxogtycnnmcbgvqz
+                                       aetositiahrhzidz
+                                       dyklsmlyvgcmtswr
+                                       ykaxtdkjqevtttbx
+                                       kfmnceyxyhiczzjm
+                                       nnizopcndipffpko
+                                       yjmznhzyfinpmvkb
+                                       sljegcvvbnjhhwdd
+                                       zmkeadxlwhfahpwg
+                                       rwvcogvegcohcrmx
+                                       aguqwrfymwbpscau
+                                       vlusytjagzvsnbwe
+                                       smvzhburcgvqtklh
+                                       rfuprvjkhazrcxpv
+                                       megqlnoqmymcrclc
+                                       gvldhkewtmlwqvqv
+                                       awynhvtyziemnjoa
+                                       voprnvtnzspfvpeh
+                                       dhlguqwmunbbekih
+                                       goayirdhnjrfuiqi
+                                       eoghydfykxdslohz
+                                       chpippjykogxpbxq
+                                       hqbycjweqczwjwgf
+                                       pvefsrvwumrlvhmt
+                                       eghwdovaynmctktk
+                                       crwkxoucibumzawc
+                                       bzbtahvhkdigvvtj
+                                       bnbptgihhfubxhho
+                                       ddqmbwyfmfnjjaro
+                                       gvtswqyzazihctif
+                                       vmqctjpgadxztqqb
+                                       dgnndowtpeooaqqf
+                                       sxdvctfdtalufxty
+                                       ylgeexosibsmmckw
+                                       sxplpyskbpqnojvw
+                                       coarhxtsvrontyeg
+                                       fyoaurggjupvzvlv
+                                       jlyrkqsiwuggvjem
+                                       uwbsjoxonreuucyi
+                                       gihuqvwxovbgokes
+                                       dxzaaxupbcgnxcwf
+                                       gidrgmvyrlqqslve
+                                       csflmlvqmonoywpx
+                                       jkxkpixlythlacnk
+                                       ejkarcdkdslldugv
+                                       dbzmsusevohhjkmr
+                                       cbrqzualjpdtworc
+                                       kpgidqlmcbpfmmwu
+                                       zwghjuofexfowqam
+                                       ncdlxmcrsmsocetz
+                                       kfprzqacefifjkbd
+                                       swwzivrxulkhvldc
+                                       wgqejhigbjwunscp
+                                       rsstnwcyybfauqxu
+                                       qhngfxyhdqopyfgk
+                                       zrndpyyejsmqsiaj
+                                       xxknxwpvafxiwwjc
+                                       mmaahwgoiwbxloem
+                                       tabacndyodmpuovp
+                                       yriwomauudscvdce
+                                       duvyscvfidmtcugl
+                                       mgipxnqlfpjdilge
+                                       imeeqcdetjuhfjnw
+                                       dvkutrdofpulqkyh
+                                       jefvtlktxegpmbya
+                                       iyzudqgpvlzjfydh
+                                       giohapxnpaqayryd
+                                       qheqdprmnqlpztls
+                                       rdxhijmzegxkotoq
+                                       hdnmaspumdwnrcdz
+                                       wafpbgehbuzdgsnc
+                                       tbtrfztsferdmhsy
+                                       vusndcyjngtkrtmk
+                                       ilqblestzxebcifh
+                                       urfgjbjgzlrfsdlv
+                                       aptcdvpsqwleqttn
+                                       bigczjvzokvfofiw
+                                       zjnjeufonyqgkbpx
+                                       trcdebioegfqrrdi
+                                       jrdvdriujlmbqewt
+                                       jqrcmuxpwurdhaue
+                                       yjlermsgruublkly
+                                       zwarvgszuqeesuwq
+                                       xthhhqzwvqiyctvs
+                                       mzwwaxnbdxhajyyv
+                                       nclsozlqrjvqifyi
+                                       gcnyqmhezcqvksqw
+                                       deuakiskeuwdfxwp
+                                       tclkbhqqcydlgrrl
+                                       qbpndlfjayowkcrx
+                                       apjhkutpoiegnxfx
+                                       oaupiimsplsvcsie
+                                       sdmxrufyhztxzgmt
+                                       ukfoinnlbqrgzdeh
+                                       azosvwtcipqzckns
+                                       mydyeqsimocdikzn
+                                       itfmfjrclmglcrkc
+                                       swknpgysfscdrnop
+                                       shyyuvvldmqheuiv
+                                       tljrjohwhhekyhle
+                                       dayinwzuvzimvzjw
+                                       qgylixuuervyylur
+                                       klqqaiemurawmaaz
+                                       hdmzgtxxjabplxvf
+                                       xiivzelzdjjtkhnj
+                                       ktgplkzblgxwrnvo
+                                       gvbpyofzodnknytd
+                                       lqhlmnmhakqeffqw
+                                       ltzdbngrcxwuxecy
+                                       obxnfjeebvovjcjz
+                                       zexpwallpocrxpvp
+                                       tjpkkmcqbbkxaiak
+                                       qiedfixxgvciblih
+                                       qcxkhghosuslbyih
+                                       gnsfidwhzaxjufgm
+                                       xrghwgvyjakkzidw
+                                       tftftwedtecglavz
+                                       wquqczzkzqrlfngr
+                                       twibtkijpvzbsfro
+                                       bmplypdsvzuhrjxp
+                                       zanrfmestvqpwbuh
+                                       zonrhfqowyimcukm
+                                       kpvajjfmqpbhrjma
+                                       kujzluicngigjbtp
+                                       iusguantsrwxdjal
+                                       kwxeuylcnszswahw
+                                       visdhnkobxnemldu
+                                       rogeadmmaicwtabl
+                                       pxqycifbgevqudvs
+                                       osaiozyvlyddylqr
+                                       vffjxrolrpuxcatx
+                                       jbmsetccdrywssjd
+                                       qgxyhjfpbfifmvgc
+                                       npejgalglldxjdhs
+                                       mbbtqgmttastrlck
+                                       whapaqwdtpkropek
+                                       dulbdboxazfyjgkg
+                                       xaymnudlozbykgow
+                                       lebvqmxeaymkkfoy
+                                       bmicnfuubkregouj
+                                       dieatyxxxlvhneoj
+                                       yglaapcsnsbuvrva
+                                       bbpjaslqpzqcwkpk
+                                       xehuznbayagrbhnd
+                                       ikqmeovaurmqfuvr
+                                       ylyokwuzxltvxmgv
+                                       hqtfinrkllhqtoiz
+                                       pjmhtigznoaejifx
+                                       fqdbmowkjtmvvrmx
+                                       uvqtqfoulvzozfxv
+                                       rpajajukuxtchrjd
+                                       sznucejifktvxdre
+                                       ufvibsmoushmjbne
+                                       xirdqoshngthfvax
+                                       iafpkddchsgdqmzl
+                                       vmualmlduipvykzh
+                                       fnmuahmblwyceejb
+                                       ilsaapnswfoymiov
+                                       lenvylifraahaclv
+                                       cukqxlipuyxedqfh
+                                       zgwecslpniqvtvuz
+                                       cdcdfpsxuyrhsmag
+                                       dszjinhantnxgqra
+                                       ioimwotsgnjeacgt
+                                       dqcymnvjystbynhp
+                                       yibaudyfefbfgunx
+                                       cabslcvunjavqkbf
+                                       goymzvmgkvlsmugf
+                                       zxteiitpthzskjjx
+                                       agnxcnaqhjhlurzs
+                                       cvmgyxhhnykuxbmb
+                                       cgqmjexydmvgwxpp
+                                       sygjajofieojiuna
+                                       clpvxbrbjvqfbzvu
+                                       cbntswqynsdqnhyv
+                                       bztpbtwbefiotkfa
+                                       pnxccbgajvhyeybu
+                                       asyzrvgzumtuissa
+                                       facjyblvcqqginxa
+                                       rvwnucnbsvberxuv
+                                       ghrbeykzrxclasie
+                                       ekujtselepgjtaql
+                                       krtrzsmduhsifyiw
+                                       ticjswvsnyrwhpnt
+                                       clmjhsftkfjzwyke
+                                       lbxlcixxcztddlam
+                                       xhfeekmxgbloguri
+                                       azxqwlucwhahtvep
+                                       kitdjrwmockhksow
+                                       keznwwcusgbtvfrs
+                                       ljvzxoywcofgwajj
+                                       vebjnhnkcfzbhrcw
+                                       eqfcxkavstxcuels
+                                       ldattkyawjrvcido
+                                       bsqqeilshcwtqyil
+                                       foqqsxahfiozcqrw
+                                       liswfmuhzfbyzjhf
+                                       sulbdcyzmolapfbs
+                                       zuggzkelwxjpsgxb
+                                       betioxrgtnhpivcw
+                                       xmtbixstdipibhgs
+                                       ttvurgqmulryyaji
+                                       viobnljznzppfmxw
+                                       qlzabfopydtxrlet
+                                       tusvydegfxhaxolk
+                                       thoufvvfjferxhwp
+                                       cfyyzppfarjiilbs
+                                       jwmhxtgafkkgseqs
+                                       pqwuuaxbeklodwpt
+                                       vndyveahdiwgkjyx
+                                       ssrjgasfhdouwyoh
+                                       thbavfcisgvvyekf
+                                       yjdvxmubvqadgypa
+                                       tlbmcxaelkouhsvu
+                                       bonohfnlboxiezzr
+                                       rktlxcbkhewyvcjl
+                                       rsmoutcbcssodvsc
+                                       qszdratuxcrhsvoh
+                                       eypyfahpuzqwzwhi
+                                       yhkrleqmqlmwdnio
+                                       vpnvxusvmngsobmq
+                                       hkzyhopvxrsimzys
+                                       dblriiwnrvnhxykl
+                                       xkriqxkrprjwpncs
+                                       rcymltrbszhyhqti
+                                       mzbvneplsnpiztzn
+                                       vkqtnptgbqefvfoc
+                                       nwdtfiaozkcjtlax
+                                       crximadpvdaccrsm
+                                       lrbajafxwwnxvbei
+                                       rbexzesrytpwwmjf
+                                       stxwjarildpnzfpg
+                                       btamaihdivrhhrrv
+                                       acqbucebpaulpotl
+                                       dkjhzghxxtxgdpvm
+                                       rsbzwsnvlpqzyjir
+                                       mizypbwvpgqoiams
+                                       nvrslorjpqaasudn
+                                       wvexcpzmconqkbvk
+                                       rfwfumhjwzrvdzam
+                                       eaghdaqorkhdsmth
+                                       gtuntmpqaivosewh
+                                       nzlsmdgjrigghrmy
+                                       dhuvxwobpzbuwjgk
+                                       kkcuvbezftvkhebf
+                                       aeediumxyljbuyqu
+                                       rfkpqeekjezejtjc
+                                       wkzasuyckmgwddwy
+                                       eixpkpdhsjmynxhi
+                                       elrlnndorggmmhmx
+                                       ayxwhkxahljoxggy
+                                       mtzvvwmwexkberaw
+                                       evpktriyydxvdhpx
+                                       otznecuqsfagruls
+                                       vrdykpyebzyblnut
+                                       cnriedolerlhbqjy
+                                       uajaprnrrkvggqgx
+                                       xdlxuguloojvskjq
+                                       mfifrjamczjncuym
+                                       otmgvsykuuxrluky
+                                       oiuroieurpyejuvm",
+            63,
+        );
+    }
+
+    #[test]
+    fn prod_tests(){
+        dotest(
+"zgsnvdmlfuplrubt
+vlhagaovgqjmgvwq
+ffumlmqwfcsyqpss
+zztdcqzqddaazdjp
+eavfzjajkjesnlsb
+urrvucyrzzzooxhx
+xdwduffwgcptfwad
+orbryxwrmvkrsxsr
+jzfeybjlgqikjcow
+mayoqiswqqryvqdi
+iiyrkoujhgpgkcvx
+egcgupjkqwfiwsjl
+zbgtglaqqolttgng
+eytquncjituzzhsx
+dtfkgggvqadhqbwb
+zettygjpcoedwyio
+rwgwbwzebsnjmtln
+esbplxhvzzgawctn
+vnvshqgmbotvoine
+wflxwmvbhflkqxvo
+twdjikcgtpvlctte
+minfkyocskvgubvm
+sfxhhdhaopajbzof
+sofkjdtalvhgwpql
+uqfpeauqzumccnrc
+tdflsbtiiepijanf
+dhfespzrhecigzqb
+xobfthcuuzhvhzpn
+olgjglxaotocvrhw
+jhkzpfcskutwlwge
+zurkakkkpchzxjhq
+hekxiofhalvmmkdl
+azvxuwwfmjdpjskj
+arsvmfznblsqngvb
+ldhkzhejofreaucc
+adrphwlkehqkrdmo
+wmveqrezfkaivvaw
+iyphmphgntinfezg
+blomkvgslfnvspem
+cgpaqjvzhbumckwo
+ydhqjcuotkeyurpx
+sbtzboxypnmdaefr
+vxrkhvglynljgqrg
+ttgrkjjrxnxherxd
+hinyfrjdiwytetkw
+sufltffwqbugmozk
+tohmqlzxxqzinwxr
+jbqkhxfokaljgrlg
+fvjeprbxyjemyvuq
+gmlondgqmlselwah
+ubpwixgxdloqnvjp
+lxjfhihcsajxtomj
+qouairhvrgpjorgh
+nloszcwcxgullvxb
+myhsndsttanohnjn
+zjvivcgtjwenyilz
+qaqlyoyouotsmamm
+tadsdceadifqthag
+mafgrbmdhpnlbnks
+aohjxahenxaermrq
+ovvqestjhbuhrwlr
+lnakerdnvequfnqb
+agwpwsgjrtcjjikz
+lhlysrshsmzryzes
+xopwzoaqtlukwwdu
+xsmfrfteyddrqufn
+ohnxbykuvvlbbxpf
+bbdlivmchvzfuhoc
+vtacidimfcfyobhf
+tinyzzddgcnmiabd
+tcjzxftqcqrivqhn
+vgnduqyfpokbmzim
+revkvaxnsxospyow
+ydpgwxxoxlywxcgi
+wzuxupbzlpzmikel
+nscghlafavnsycjh
+xorwbquzmgmcapon
+asmtiycegeobfxrn
+eqjzvgkxgtlyuxok
+mmjrskloposgjoqu
+gceqosugbkvytfto
+khivvoxkvhrgwzjl
+qtmejuxbafroifjt
+ttmukbmpoagthtfl
+bxqkvuzdbehtduwv
+gvblrpzjylanoggj
+cltewhyjxdbmbtqj
+fbkgedqvomdipklj
+uxvuplhenqawfcjt
+fkdjmayiawdkycva
+gnloqfgbnibzyidh
+kyzorvtopjiyyyqg
+drckpekhpgrioblt
+tvhrkmbnpmkkrtki
+khaldwntissbijiz
+aoojqakosnaxosom
+xfptccznbgnpfyqw
+moqdwobwhjxhtrow
+chfwivedutskovri
+gprkyalfnpljcrmi
+pwyshpwjndasykst
+xuejivogihttzimd
+bugepxgpgahtsttl
+zufmkmuujavcskpq
+urybkdyvsrosrfro
+isjxqmlxwtqmulbg
+pxctldxgqjqhulgz
+hclsekryiwhqqhir
+hbuihpalwuidjpcq
+ejyqcxmfczqfhbxa
+xljdvbucuxnnaysv
+irqceqtqwemostbb
+anfziqtpqzqdttnz
+cgfklbljeneeqfub
+zudyqkuqqtdcpmuo
+iuvhylvznmhbkbgg
+mpgppmgfdzihulnd
+argwmgcvqqkxkrdi
+pdhrfvdldkfihlou
+cbvqnjrvrsnqzfob
+lkvovtsqanohzcmm
+vxoxjdyoylqcnyzt
+kurdpaqiaagiwjle
+gwklwnazaxfkuekn
+rbaamufphjsjhbdl
+tzbrvaqvizhsisbd
+pbcqlbfjvlideiub
+hiwoetbfywaeddtx
+fjirczxtuupfywyf
+omeoegeyyospreem
+ozbbpupqpsskvrjh
+pzvcxkvjdiyeyhxa
+odclumkenabcsfzr
+npdyqezqdjqaszvm
+yodkwzmrhtexfrqa
+rjcmmggjtactfrxz
+mioxfingsfoimual
+aqskaxjjborspfaa
+wientdsttkevjtkf
+tdaswkzckmxnfnct
+voucjhzvkkhuwoqk
+boaaruhalgaamqmh
+iufzxutxymorltvb
+pfbyvbayvnrpijpo
+obztirulgyfthgcg
+ntrenvhwxypgtjwy
+ephlkipjfnjfjrns
+pkjhurzbmobhszpx
+gqbnjvienzqfbzvj
+wjelolsrbginwnno
+votanpqpccxqricj
+bxyuyiglnmbtvehi
+qyophcjfknbcbjrb
+anoqkkbcdropskhj
+tcnyqaczcfffkrtl
+rsvqimuqbuddozrf
+meppxdrenexxksdt
+tyfhfiynzwadcord
+wayrnykevdmywycf
+mhowloqnppswyzbu
+tserychksuwrgkxz
+xycjvvsuaxsbrqal
+fkrdsgaoqdcqwlpn
+vrabcmlhuktigecp
+xgxtdsvpaymzhurx
+ciabcqymnchhsxkc
+eqxadalcxzocsgtr
+tsligrgsjtrnzrex
+qeqgmwipbspkbbfq
+vzkzsjujltnqwliw
+ldrohvodgbxokjxz
+jkoricsxhipcibrq
+qzquxawqmupeujrr
+mizpuwqyzkdbahvk
+suupfxbtoojqvdca
+ywfmuogvicpywpwm
+uevmznxmsxozhobl
+vjbyhsemwfwdxfxk
+iyouatgejvecmtin
+tcchwpuouypllcxe
+lgnacnphdiobdsef
+uoxjfzmdrmpojgbf
+lqbxsxbqqhpjhfxj
+knpwpcnnimyjlsyz
+fezotpoicsrshfnh
+dkiwkgpmhudghyhk
+yzptxekgldksridv
+pckmzqzyiyzdbcts
+oqshafncvftvwvsi
+yynihvdywxupqmbt
+iwmbeunfiuhjaaic
+pkpkrqjvgocvaxjs
+ieqspassuvquvlyz
+xshhahjaxjoqsjtl
+fxrrnaxlqezdcdvd
+pksrohfwlaqzpkdd
+ravytrdnbxvnnoyy
+atkwaifeobgztbgo
+inkcabgfdobyeeom
+ywpfwectajohqizp
+amcgorhxjcybbisv
+mbbwmnznhafsofvr
+wofcubucymnhuhrv
+mrsamnwvftzqcgta
+tlfyqoxmsiyzyvgv
+ydceguvgotylwtea
+btyvcjqhsygunvle
+usquiquspcdppqeq
+kifnymikhhehgote
+ybvkayvtdpgxfpyn
+oulxagvbavzmewnx
+tvvpekhnbhjskzpj
+azzxtstaevxurboa
+nfmwtfgrggmqyhdf
+ynyzypdmysfwyxgr
+iaobtgubrcyqrgmk
+uyxcauvpyzabbzgv
+fbasfnwiguasoedc
+mgmjoalkbvtljilq
+szgkxiqkufdvtksb
+xgfzborpavdmhiuj
+hmuiwnsonvfgcrva
+zolcffdtobfntifb
+mvzgcsortkugvqjr
+pbbpgraaldqvzwhs
+zvsxegchksgnhpuv
+kdpdboaxsuxfswhx
+jdfggigejfupabth
+tpeddioybqemyvqz
+mxsntwuesonybjby
+tzltdsiojfvocige
+ubtdrneozoejiqrv
+fusyucnhncoxqzql
+nlifgomoftdvkpby
+pyikzbxoapffbqjw
+hzballplvzcsgjug
+ymjyigsfehmdsvgz
+vpqgyxknniunksko
+ffkmaqsjxgzclsnq
+jcuxthbedplxhslk
+ymlevgofmharicfs
+nyhbejkndhqcoisy
+rjntxasfjhnlizgm
+oqlnuxtzhyiwzeto
+tntthdowhewszitu
+rmxyoceuwhsvfcua
+qpgsjzwenzbxyfgw
+sumguxpdkocyagpu
+ymfrbxwrawejkduu
+hetgrtmojolbmsuf
+qzqizpiyfasgttex
+qnmoemcpuckzsshx
+ddyqiihagcmnxccu
+oirwxyfxxyktgheo
+phpaoozbdogbushy
+uctjdavsimsrnvjn
+aurbbphvjtzipnuh
+hpbtrubopljmltep
+pyyvkthqfsxqhrxg
+jdxaiqzkepxbfejk
+ukgnwbnysrzvqzlw
+lfkatkvcssnlpthd
+ucsyecgshklhqmsc
+rwdcbdchuahkvmga
+rxkgqakawgpwokum
+hbuyxeylddfgorgu
+tbllspqozaqzglkz
+rqfwizjlbwngdvvi
+xuxduyzscovachew
+kouiuxckkvmetvdy
+ycyejrpwxyrweppd
+trctlytzwiisjamx
+vtvpjceydunjdbez
+gmtlejdsrbfofgqy
+jgfbgtkzavcjlffj
+tyudxlpgraxzchdk
+gyecxacqitgozzgd
+rxaocylfabmmjcvt
+tornfzkzhjyofzqa
+kocjcrqcsvagmfqv
+zfrswnskuupivzxb
+cunkuvhbepztpdug
+pmpfnmklqhcmrtmf
+tfebzovjwxzumxap
+xpsxgaswavnzkzye
+lmwijdothmxclqbr
+upqxhmctbltxkarl
+axspehytmyicthmq
+xdwrhwtuooikehbk
+tpggalqsytvmwerj
+jodysbwnymloeqjf
+rxbazvwuvudqlydn
+ibizqysweiezhlqa
+uexgmotsqjfauhzp
+ldymyvumyhyamopg
+vbxvlvthgzgnkxnf
+pyvbrwlnatxigbrp
+azxynqididtrwokb
+lwafybyhpfvoawto
+ogqoivurfcgspytw
+cinrzzradwymqcgu
+sgruxdvrewgpmypu
+snfnsbywuczrshtd
+xfzbyqtyxuxdutpw
+fmpvjwbulmncykbo
+ljnwoslktrrnffwo
+ceaouqquvvienszn
+yjomrunrxjyljyge
+xpmjsapbnsdnbkdi
+uetoytptktkmewre
+eixsvzegkadkfbua
+afaefrwhcosurprw
+bwzmmvkuaxiymzwc
+gejyqhhzqgsrybni
+gjriqsfrhyguoiiw
+gtfyomppzsruhuac
+ogemfvmsdqqkfymr
+jgzbipsygirsnydh
+zghvlhpjnvqmocgr
+ngvssuwrbtoxtrka
+ietahyupkbuisekn
+gqxqwjizescbufvl
+eiprekzrygkncxzl
+igxfnxtwpyaamkxf
+soqjdkxcupevbren
+fspypobyzdwstxak
+qstcgawvqwtyyidf
+gsccjacboqvezxvd
+bfsblokjvrqzphmc
+srezeptvjmncqkec
+opmopgyabjjjoygt
+msvbufqexfrtecbf
+uiaqweyjiulplelu
+pbkwhjsibtwjvswi
+xwwzstmozqarurrq
+nytptwddwivtbgyq
+ejxvsufbzwhzpabr
+jouozvzuwlfqzdgh
+gfgugjihbklbenrk
+lwmnnhiuxqsfvthv
+bzvwbknfmaeahzhi
+cgyqswikclozyvnu
+udmkpvrljsjiagzi
+zzuhqokgmisguyna
+ekwcdnjzuctsdoua
+eueqkdrnzqcaecyd
+lnibwxmokbxhlris
+fdrbftgjljpzwhea
+iabvuhhjsxmqfwld
+qgogzkynrgejakta
+mfcqftytemgnpupp
+klvhlhuqhosvjuqk
+gdokmxcgoqvzvaup
+juududyojcazzgvr
+fyszciheodgmnotg
+yfpngnofceqfvtfs
+cahndkfehjumwavc
+dxsvscqukljxcqyi
+cqukcjtucxwrusji
+vevmmqlehvgebmid
+ahswsogfrumzdofy
+ftasbklvdquaxhxb
+tsdeumygukferuif
+ybfgbwxaaitpwryg
+djyaoycbymezglio
+trzrgxdjqnmlnzpn
+rumwchfihhihpqui
+ffrvnsgrnzemksif
+oizlksxineqknwzd
+cirqcprftpjzrxhk
+zrhemeqegmzrpufd
+kqgatudhxgzlgkey
+syjugymeajlzffhq
+nlildhmgnwlopohp
+flcszztfbesqhnyz
+ohzicmqsajyqptrw
+ebyszucgozsjbelq
+enxbgvvcuqeloxud
+ubwnvecbsmhkxwuk
+noifliyxvlkqphbo
+hazlqpetgugxxsiz
+ihdzoerqwqhgajzb
+ivrdwdquxzhdrzar
+synwycdvrupablib
+mqkdjkntblnmtvxj
+qmmvoylxymyovrnq
+pjtuxskkowutltlq
+gchrqtloggkrjciz
+namzqovvsdipazae
+yfokqhkmakyjzmys
+iapxlbuoiwqfnozm
+fbcmlcekgfdurqxe
+ednzgtczbplwxjlq
+gdvsltzpywffelsp
+oaitrrmpqdvduqej
+gseupzwowmuuibjo
+dfzsffsqpaqoixhh
+tclhzqpcvbshxmgx
+cfqkptjrulxiabgo
+iraiysmwcpmtklhf
+znwjlzodhktjqwlm
+lcietjndlbgxzjht
+gdkcluwjhtaaprfo
+vbksxrfznjzwvmmt
+vpfftxjfkeltcojl
+thrmzmeplpdespnh
+yafopikiqswafsit
+xxbqgeblfruklnhs
+qiufjijzbcpfdgig
+ikksmllfyvhyydmi
+sknufchjdvccccta
+wpdcrramajdoisxr
+grnqkjfxofpwjmji
+lkffhxonjskyccoh
+npnzshnoaqayhpmb
+fqpvaamqbrnatjia
+oljkoldhfggkfnfc
+ihpralzpqfrijynm
+gvaxadkuyzgbjpod
+onchdguuhrhhspen
+uefjmufwlioenaus
+thifdypigyihgnzo
+ugqblsonqaxycvkg
+yevmbiyrqdqrmlbw
+bvpvwrhoyneorcmm
+gbyjqzcsheaxnyib
+knhsmdjssycvuoqf
+nizjxiwdakpfttyh
+nwrkbhorhfqqoliz
+ynsqwvwuwzqpzzwp
+yitscrgexjfclwwh
+dhajwxqdbtrfltzz
+bmrfylxhthiaozpv
+frvatcvgknjhcndw
+xlvtdmpvkpcnmhya
+pxpemuzuqzjlmtoc
+dijdacfteteypkoq
+knrcdkrvywagglnf
+fviuajtspnvnptia
+xvlqzukmwbcjgwho
+bazlsjdsjoeuvgoz
+nslzmlhosrjarndj
+menvuwiuymknunwm
+uavfnvyrjeiwqmuu
+yrfowuvasupngckz
+taevqhlrcohlnwye
+skcudnogbncusorn
+omtnmkqnqedsajfv
+yqmgsqdgsuysqcts
+odsnbtyimikkbmdd
+vuryaohxdvjllieb
+dhaxldeywwsfamlo
+opobvtchezqnxpak
+pzfnegouvsrfgvro
+rzkcgpxdslzrdktu
+ksztdtqzxvhuryam
+ctnqnhkcooqipgkh
+pyqbbvrzdittqbgm
+koennvmolejeftij
+rvzlreqikqlgyczj
+xrnujfoyhonzkdgd
+mmsmhkxaiqupfjil
+ypjwoemqizddvyfd
+qgugcxnbhvgahykj
+cviodlsrtimbkgmy
+xbfbbechhmrjxhnw
+psuipaoucfczfxkp
+hdhwcpeuptgqqvim
+gsxlruhjeaareilr
+vgyqonnljuznyrhk
+eewezahlumervpyu
+iiolebrxfadtnigy
+tdadlrodykrdfscn
+ocvdtzjxrhtjurpo
+gidljbuvuovkhhrf
+qwfcpilbjwzboohd
+xzohxonlezuiupbg
+vslpbkkqgvgbcbix
+pivzqrzfxosbstzn
+fyqcfboevcqmbhhs
+yqsrneacnlxswojx
+heicqpxxyrwcbsjz
+yzynmnnoumkmlbeh
+bncadbjdvvmczylw
+hlnjskgfzbgmigfn
+fphpszymugpcykka
+zbifcktanxpmufvy
+saklpkhoyfeqbguy
+nqtqfcfxmpivnjyo
+locygrwerxlsvzqm
+qqflecydqvlogjme
+njklmixvgkzpgppf
+ugzkpjwjflaswyma
+lriousvkbeftslcy
+nsvsauxzfbbotgmh
+tblcpuhjyybrlica
+hqwshxcilwtmxrsf
+xojwroydfeoqupup
+tikuzsrogpnohpib
+layenyqgxdfggloc
+nqsvjvbrpuxkqvmq
+ivchgxkdlfjdzxmk
+uoghiuosiiwiwdws
+twsgsfzyszsfinlc
+waixcmadmhtqvcmd
+zkgitozgrqehtjkw
+xbkmyxkzqyktmpfi
+qlyapfmlybmatwxn
+ntawlvcpuaebuypf
+clhebxqdkcyndyof
+nrcxuceywiklpemc
+lmurgiminxpapzmq
+obalwqlkykzflxou
+huvcudpiryefbcye
+zlxbddpnyuyapach
+gqfwzfislmwzyegy
+jhynkjtxedmemlob
+hmrnvjodnsfiukex
+pstmikjykzyavfef
+wuwpnscrwzsyalyt
+hksvadripgdgwynm
+tvpfthzjleqfxwkh
+xpmrxxepkrosnrco
+qjkqecsnevlhqsly
+jjnrfsxzzwkhnwdm
+pehmzrzsjngccale
+bsnansnfxduritrr
+ejzxkefwmzmbxhlb
+pceatehnizeujfrs
+jtidrtgxopyeslzl
+sytaoidnamfwtqcr
+iabjnikomkgmyirr
+eitavndozoezojsi
+wtsbhaftgrbqfsmm
+vvusvrivsmhtfild
+qifbtzszfyzsjzyx
+ifhhjpaqatpbxzau
+etjqdimpyjxiuhty
+fvllmbdbsjozxrip
+tjtgkadqkdtdlkpi
+xnydmjleowezrecn
+vhcbhxqalroaryfn
+scgvfqsangfbhtay
+lbufpduxwvdkwhmb
+tshipehzspkhmdoi
+gtszsebsulyajcfl
+dlrzswhxajcivlgg
+kgjruggcikrfrkrw
+xxupctxtmryersbn
+hljjqfjrubzozxts
+giaxjhcwazrenjzs
+tyffxtpufpxylpye
+jfugdxxyfwkzqmgv
+kbgufbosjghahacw
+xpbhhssgegmthwxb
+npefofiharjypyzk
+velxsseyxuhrpycy
+sglslryxsiwwqzfw
+susohnlpelojhklv
+lfnpqfvptqhogdmk
+vtcrzetlekguqyle
+jlyggqdtamcjiuxn
+olxxqfgizjmvigvl
+cyypypveppxxxfuq
+hewmxtlzfqoqznwd
+jzgxxybfeqfyzsmp
+xzvvndrhuejnzesx
+esiripjpvtqqwjkv
+xnhrwhjtactofwrd
+knuzpuogbzplofqx
+tihycsdwqggxntqk
+xkfywvvugkdalehs
+cztwdivxagtqjjel
+dsaslcagopsbfioy
+gmowqtkgrlqjimbl
+ctcomvdbiatdvbsd
+gujyrnpsssxmqjhz
+nygeovliqjfauhjf
+mmgmcvnuppkbnonz
+bhipnkoxhzcotwel
+wkwpgedgxvpltqid
+mliajvpdocyzcbot
+kqjhsipuibyjuref
+zqdczykothbgxwsy
+koirtljkuqzxioaz
+audpjvhmqzvhzqas
+cxyhxlhntyidldfx
+iasgocejboxjgtkx
+abehujmqotwcufxp
+fmlrzqmazajxeedl
+knswpkekbacuxfby
+yvyalnvrxgstqhxm
+sjnrljfrfuyqfwuw
+ssaqruwarlvxrqzm
+iaxbpeqqzlcwfqjz
+uwyxshjutkanvvsc
+uxwrlwbblcianvnb
+nodtifgrxdojhneh
+mloxjfusriktxrms
+lkfzrwulbctupggc
+gcrjljatfhitcgfj
+tkdfxeanwskaivqs
+ypyjxqtmitwubbgt
+ssxbygzbjsltedjj
+zdrsnoorwqfalnha
+xlgmissaiqmowppd
+azhbwhiopwpguiuo
+fydlahgxtekbweet
+qtaveuqpifprdoiy
+kpubqyepxqleucem
+wlqrgqmnupwiuory
+rwyocktuqkuhdwxz
+abzjfsdevoygctqv
+zsofhaqqghncmzuw
+lqbjwjqxqbfgdckc
+bkhyxjkrqbbunido
+yepxfjnnhldidsjb
+builayfduxbppafc
+wedllowzeuswkuez
+gverfowxwtnvgrmo
+tpxycfumxdqgntwf
+lqzokaoglwnfcolw
+yqsksyheyspmcdqt
+vufvchcjjcltwddl
+saeatqmuvnoacddt
+dxjngeydvsjbobjs
+ucrcxoakevhsgcep
+cajgwjsfxkasbayt
+hknzmteafsfemwuv
+xxwhxwiinchqqudr
+usfenmavvuevevgr
+kxcobcwhsgyizjok
+vhqnydeboeunnvyk
+bgxbwbxypnxvaacw
+bwjzdypacwgervgk
+rrioqjluawwwnjcr
+fiaeyggmgijnasot
+xizotjsoqmkvhbzm
+uzphtrpxwfnaiidz
+kihppzgvgyoncptg
+hfbkfrxwejdeuwbz
+zgqthtuaqyrxicdy
+zitqdjnnwhznftze
+jnzlplsrwovxlqsn
+bmwrobuhwnwivpca
+uuwsvcdnoyovxuhn
+nmfvoqgoppoyosaj
+hxjkcppaisezygpe
+icvnysgixapvtoos
+vbvzajjgrmjygkhu
+jinptbqkyqredaos
+dpmknzhkhleawfvz
+ouwwkfhcedsgqqxe
+owroouiyptrijzgv
+bewnckpmnbrmhfyu
+evdqxevdacsbfbjb
+catppmrovqavxstn
+dqsbjibugjkhgazg
+mkcldhjochtnvvne
+sblkmhtifwtfnmsx
+lynnaujghehmpfpt
+vrseaozoheawffoq
+ytysdzbpbazorqes
+sezawbudymfvziff
+vrlfhledogbgxbau
+bipdlplesdezbldn
+ermaenjunjtbekeo
+eyaedubkthdecxjq
+gbzurepoojlwucuy
+rsiaqiiipjlouecx
+beqjhvroixhiemtw
+buzlowghhqbcbdwv
+ldexambveeosaimo
+fpyjzachgrhxcvnx
+komgvqejojpnykol
+fxebehjoxdujwmfu
+jnfgvheocgtvmvkx
+qmcclxxgnclkuspx
+rsbelzrfdblatmzu
+vexzwqjqrsenlrhm
+tnfbkclwetommqmh
+lzoskleonvmprdri
+nnahplxqscvtgfwi
+ubqdsflhnmiayzrp
+xtiyqxhfyqonqzrn
+omdtmjeqhmlfojfr
+cnimgkdbxkkcnmkb
+tapyijgmxzbmqnks
+byacsxavjboovukk
+awugnhcrygaoppjq
+yxcnwrvhojpuxehg
+btjdudofhxmgqbao
+nzqlfygiysfuilou
+nubwfjdxavunrliq
+vqxmmhsbmhlewceh
+ygavmcybepzfevrp
+kgflmrqsvxprkqgq
+iaqyqmcaedscmakk
+cvbojnbfmrawxzkh
+jjjrprbnlijzatuw
+lcsudrrfnnggbrmk
+qzgxbiavunawfibc
+gnnalgfvefdfdwwg
+nokmiitzrigxavsc
+etzoxwzxqkkhvais
+urxxfacgjccieufi
+lqrioqhuvgcotuec
+dydbaeyoypsbftra
+hhrotenctylggzaf
+evctqvzjnozpdxzu
+tbpvithmorujxlcp
+pllbtcbrtkfpvxcw
+fzyxdqilyvqreowv
+xdleeddxwvqjfmmt
+fcldzthqqpbswoin
+sgomzrpjfmvgwlzi
+axjyskmtdjbxpwoz
+hcvaevqxsmabvswh
+lfdlsfcwkwicizfk
+isjbwpzdognhoxvm
+oqnexibqxlyxpluh
+zqfbgodsfzwgcwuf
+kvmnwruwsjllbldz
+kghazimdyiyhmokj
+uiktgpsxpoahofxn
+zkdwawxargcmidct
+ftbixlyiprshrjup
+nofhmbxififwroeg
+mcdaqrhplffxrcdt
+fbjxnwojcvlawmlb
+rizoftvwfdhiwyac
+eduogrtyhxfwyars
+zoikunqxgjwfqqwr
+zxwbbpmvctzezaqh
+nghujwyeabwdqnop
+vcxamijpoyyksogn
+jnckdbuteoqlsdae
+jurfqqawafmsiqwv
+inepmztrzehfafie
+tznzkyvzodbrtscf
+xewbavjeppflwscl
+ucndzsorexjlnplo
+jpxbctscngxgusvu
+mfmygcllauzuoaok
+oibkuxhjmhxhhzby
+zjkslwagmeoisunw
+avnnxmopdgvmukuu
+jmaargejcwboqhkt
+yacmpeosarsrfkrv
+iqhgupookcaovwgh
+ebjkdnxwtikqzufc
+imdhbarytcscbsvb
+ifyibukeffkbqvcr
+aloighmyvwybtxhx
+yszqwrutbkiwkxjg
+xyholyzlltjhsuhp
+gykhmrwucneoxcrf
+badkdgqrpjzbabet
+sunaucaucykwtkjj
+pumqkglgfdhneero
+usgtyuestahlydxq
+xmfhflphzeudjsjm
+knywgmclisgpootg
+mtojnyrnvxtweuzb
+uuxufbwfegysabww
+vobhwwocqttlbsik
+yuydfezeqgqxqmnd
+wbqgqkwbibiilhzc
+sfdmgxsbuzsawush
+ilhbxcfgordyxwvp
+ahqoavuysblnqaeg
+plwgtvpgotskmsey
+ewjcmzkcnautrrmp
+tyekgzbznlikcyqj
+bqzctiuaxpriuiga
+bimvbfjkiupyqiys
+mpqtbcxfhwymxncw
+htemlptvqhharjgb
+mqbsmsruwzzxgcxc
+zjyedjwhnvteuaid
+pzoelkoidwglpttc
+efydnsvlfimvwxhx
+gfyhgoeiyjcgfyze
+deqtomhwopmzvjlt
+casafubtkoopuaju
+yylsfarntbucfulg
+mgjwsormkjsrrxan
+lkkenpupgmjpnqqd
+tegweszyohsoluot
+lihsfdwxmxvwdxna
+rrefrjjxerphejwb
+guuazonjoebhymtm
+ysofqzmfmyneziki
+lmjgaliatcpduoal
+qzthcpjwtgahbebr
+wvakvephyukmpemm
+simxacxxzfoaeddw
+aetgqmiqzxbvbviz
+jxlmhdmqggevrxes
+mmuglnjmuddzgaik
+svopsqhtrslgycgc
+xnvcsiiqrcjkvecn
+kkvumxtvashxcops
+bduflsdyeectvcgl
+vfrxbwmmytjvqnsj
+eeqtdneiyiaiofxw
+crtbgknfacjtwkfl
+uuutuoxdsxolpbhd
+lcrztwzreaswovtn
+htorkvnvujmjdqzj
+wttzuzvrzlyhfzyf
+oraewznfwgdsnhuk
+rctlkqqvkwbgrcgk
+cfehrsrqhzyiwtmz
+kbvxwcumjkhvjpui
+xxlocexbmniiakfo
+gtknkkzvykmlqghl
+kcjuxvkuimhwqrtk
+vohekwkuyuoacuww
+vorctgughscysyfo
+zmjevqplngzswxyq
+qhswdrhrijnatkyo
+joakcwpfggtitizs
+juzlwjijcmtswdtq
+icbyaqohpkemhkip
+rpdxgpzxncedmvzh
+rozkmimbqhbhcddv
+wkkypomlvyglpfpf
+jcaqyaqvsefwtaya
+ghvmtecoxlebdwnf
+lqrcyiykkkpkxvqt
+eqlarfazchmzotev
+vqwndafvmpguggef
+dbfxzrdkkrusmdke
+cmjpjjgndozcmefj
+hbrdcwjuyxapyhlo
+mmforetykbosdwce
+zynfntqwblbnfqik
+sodwujfwlasznaiz
+yyvrivjiqnxzqkfp
+uldbskmmjbqllpnm
+fyhhrmrsukeptynl
+hpfjekktvdkgdkzl
+bozhkoekcxzeorob
+uvpptyfrzkvmtoky
+hkhfprmjdpjvfkcb
+igxzwktwsqhsivqu
+qceomwysgkcylipb
+cglateoynluyeqgc
+xcsdfkpeguxgvpfh
+owjhxlcncdgkqyia
+rpbmrpcesiakqpna
+lueszxiourxsmezb
+zelvsowimzkxliwc
+vzxbttoobtvdtkca
+pfxvzphzwscqkzsi
+edsjorainowytbzu
+ipsegdaluoiphmnz
+mkhueokfpemywvuw
+urxdnumhylpafdlc
+ggluurzavsxkvwkl
+ctclphidqgteakox
+tfobosynxsktajuk
+jzrmemhxqmzhllif
+eemwekimdfvqslsx
+yjkwpzrbanoaajgq
+rlxghzanuyeimfhx
+hozbgdoorhthlqpv
+obkbmflhyanxilnx
+xojrippyxjmpzmsz
+ukykmbfheixuviue
+qivlmdexwucqkres
+rmyxxipqkarpjmox
+fgaftctbvcvnrror
+raawxozucfqvasru
+dinpjbdfjfizexdh
+gybxubwnnbuyvjcr
+qrqitdvyoneqyxcg
+jqzcfggayzyoqteo
+cikqpvxizpdbmppm
+stfpldgyhfmucjjv
+slzbcuihmimpduri
+aufajwfrsorqqsnl
+iylmzraibygmgmqj
+lcdyfpcqlktudfmu
+pmomzzsdpvgkkliw
+zpplirgtscfhbrkj
+mvhyerxfiljlotjl
+ofkvrorwwhusyxjx
+xngzmvcgkqfltjpe
+yxfxaqipmysahqqq
+sdqafdzgfdjuabup
+qcqajmerahcdgxfv
+xqimrqtupbapawro
+qfvkqwidzzrehsbl
+himixxvueksiqfdf
+vgtfqpuzxxmhrvvd
+adiioqeiejguaost
+jnzxuycjxvxehbvm
+xedbpxdhphamoodk
+jsrioscmwlsfuxrg
+mtsynnfxunuohbnf
+enamqzfzjunnnkpe
+uwcvfecunobyhces
+ciygixtgbsccpftq
+ewjgcronizkcsfjy
+wztjkoipxsikoimv
+jrgalyvfelwxforw
+imylyalawbqwkrwb
+yflwqfnuuvgjsgcj
+wkysyzusldlojoue
+zopllxnidcffcuau
+bscgwxuprxaerskj
+zvnvprxxjkhnkkpq
+nejwxbhjxxdbenid
+chryiccsebdbcnkc
+guoeefaeafhlgvxh
+nzapxrfrrqhsingx
+mkzvquzvqvwsejqs
+kozmlmbchydtxeeo
+keylygnoqhmfzrfp
+srwzoxccndoxylxe
+uqjzalppoorosxxo
+potmkinyuqxsfdfw
+qkkwrhpbhypxhiun
+wgfvnogarjmdbxyh
+gkidtvepcvxopzuf
+atwhvmmdvmewhzty
+pybxizvuiwwngqej
+zfumwnazxwwxtiry
+keboraqttctosemx
+vtlzxaqdetbhclib
+wjiecykptzexuayl
+ejatfnyjjdawepyk
+mpcrobansyssvmju
+gqukndzganeueabm
+ukzscvomorucdnqd
+wfydhtbzehgwfazx
+mtwqdzlephqvxqmx
+dltmlfxbjopefibh
+atcfrowdflluqtbi
+vowawlophlxaqonw
+vblgdjzvwnocdipw
+uzerzksmkvnlvlhm
+ytjwhpaylohorvxd
+siprvfxvnxcdgofz
+cbhjupewcyjhvtgs
+apqtozaofusmfqli
+tmssrtlxfouowqnr
+ntutrvwnzzgmokes
+zrsgpwdzokztdpis
+nrobvmsxtfmrqdhv
+kadkaftffaziqdze
+yrovbgcyqtlsnoux
+modheiwuhntdecqs
+gzhjypwddizemnys
+gaputpwpcsvzxjho
+bgmouxwoajgaozau
+oxuapfrjcpyakiwt
+kntwbvhuaahdixzj
+epqjdjbnkxdnaccx
+dspltdvznhypykri
+tdrgqmbnagrxdwtt
+njfqawzjggmemtbg
+chpemsgwpzjpdnkk
+fpsrobmbqbmigmwk
+flxptsrqaazmprnl
+nzdunrxlcbfklshm
+miuwljvtkgzdlbnn
+xbhjakklmbhsdmdt
+xwxhsbnrwnegwcov
+pwosflhodjaiexwq
+fhgepuluczttfvqh
+tldxcacbvxyamvkt
+gffxatrjglkcehim
+tzotkdrpxkucsdps
+wxheftdepysvmzbe
+qfooyczdzoewrmku
+rvlwikuqdbpjuvoo
+bcbrnbtfrdgijtzt
+vaxqmvuogsxonlgq
+ibsolflngegravgo
+txntccjmqakcoorp
+vrrbmqaxfbarmlmc
+dzspqmttgsuhczto
+pikcscjunxlwqtiw
+lwzyogwxqitqfqlv
+gsgjsuaqejtzglym
+feyeqguxbgmcmgpp
+gmttebyebdwvprkn
+mzuuwbhzdjfdryxu
+fganrbnplymqbzjx
+cvsrbdcvhtxxdmro
+scmgkjlkqukoamyp
+fkgrqbyqpqcworqc
+hjsrvkdibdjarxxb
+sztzziuqroeidcus
+pxdfvcpvwaddrzwv
+phdqqxleqdjfgfbg
+cqfikbgxvjmnfncy",
+69,
+);  // is nice because it has at least three vowels and a double letter, even though the letters used by different rules overlap.
+
+    }
+}
+/* */
