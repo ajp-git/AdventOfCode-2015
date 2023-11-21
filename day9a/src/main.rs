@@ -1,88 +1,37 @@
-use std::collections::HashMap;
+use std::{collections::HashMap};
+use itertools::Itertools;
 
-#[derive(Debug, Clone)]
+fn get_path(path: &str) -> u32{
 
-struct CityData {
-    roads: Vec<Road>,
-    visited: bool,
+let mut places = Vec::new();
+let mut distances = HashMap::new();
+
+for line in path.lines() {
+    let line = line;
+    let parts: Vec<&str> = line.split_whitespace().collect();
+    let (source, dest, distance) = (parts[0], parts[2], parts[4].parse::<u16>().unwrap());
+
+    places.push(source);
+    places.push(dest);
+    distances.entry(source).or_insert_with(HashMap::new).insert(dest, distance);
+    distances.entry(dest).or_insert_with(HashMap::new).insert(source, distance);
 }
 
-#[derive(Debug, Clone)]
-struct Road {
-    to: String,
-    distance: u32,
+places.sort();
+places.dedup();
+
+let (mut shortest, mut longest) = (u16::MAX, 0);
+
+for items in places.iter().permutations(places.len()) {
+    let dist: u16 = items.windows(2)
+                         .map(|w| *distances[w[0]].get(w[1]).unwrap())
+                         .sum();
+    shortest = shortest.min(dist);
+    longest = longest.max(dist);
 }
 
-fn santa(text: &str) -> u32 {
-
-    let mut cities:HashMap<String,CityData>=HashMap::new();
-
-    for line in text.split("\n") {
-        add_road(line.trim(), &mut cities);
-    }
-
-    println!("Cities : {:?}", cities);
-    get_full_map(&cities);
-    0
-}
-
-fn add_road (text: &str, cities:&mut HashMap<String, CityData>) {
-    let parts:Vec<&str>=text.clone().split(' ').collect();
- 
-    let distance = parts[4].parse::<u32>().unwrap();
-
-    //cities.entry(parts[0].trim().to_string()).or_insert_with(CityData { roads: vec![Road { to: parts[2].trim().to_string(), distance}], visited: false});
-    cities.entry(parts[0].trim().to_string()).or_insert_with(||CityData {
-        roads: Vec::new(), visited: false})
-        .roads
-        .push(Road { to: parts[2].trim().to_string(), distance});
-    
-    cities.entry(parts[2].trim().to_string()).or_insert_with(||CityData {
-        roads: Vec::new(), visited: false})
-        .roads
-        .push(Road { to: parts[0].trim().to_string(), distance});
-    
-}
-
-fn get_full_map(cities:&HashMap<String, CityData>) {
-
-    // Start by the least connected city
-    let mut city_connections:u32=u32::MAX;
-    let mut city:String="".to_string();
-
-    for c in cities {
-        let cn = c.1.roads.len() as u32;
-        if cn<city_connections {
-            city_connections=cn;
-            city=c.0.to_string();
-        }
-    };
-
-    println!("Least connected city : {city} with {city_connections} ");
-    let mut mut_cities = cities.clone();
-
-    get_path(city, &mut mut_cities, 0);    
-}
-
-fn get_path (city: String, cities:&mut HashMap<String, CityData>, current_distance:u32) -> u32 {
-    println!("Looking roads for {city}");
-    println!("Marking this city as visited");
-
-    let Some(mut c) = cities.get_mut(&city) else{panic!("Not found city {}", city)};
-    c.visited=true;
-
-    if cities.len() ==1 {
-        cities.iter().next().unwrap().1.roads.iter().for_each(|r| println!("\tFrom {city} to {} = {}",r.to, r.distance));
-        return cities.iter().next().unwrap().1.roads[0].distance;
-    }
-
-    let mut new_cities:HashMap<String, CityData>=cities
-    .iter()
-    .filter(|(&ref c, d)|c != &city && d.visited==false)
-    .map(|(k,l)| (k.clone(), l.clone()))
-    .collect();
-
-    new_cities.iter().for_each(|(&ref k,&ref _l)| {get_path(k.clone(), &mut new_cities.clone());});
+println!("shortest: {}", shortest);
+println!("longest: {}", longest);
 0
 }
 
@@ -95,7 +44,7 @@ mod tests {
     fn dotest(paq: &str, expected: u32) {
         println!();
         println!("-----------------------");
-        let actual = santa(paq);
+        let actual = get_path(paq);
         assert!(
             actual == expected,
             "Test failed with \nExpected {expected:?} but got {actual:?}"
@@ -107,7 +56,7 @@ mod tests {
         dotest("London to Dublin = 464
         London to Belfast = 518
         Dublin to Belfast = 141", 0); 
-/*        dotest("Faerun to Tristram = 65
+        dotest("Faerun to Tristram = 65
         Faerun to Tambi = 129
         Faerun to Norrath = 144
         Faerun to Snowdin = 71
@@ -135,7 +84,7 @@ mod tests {
         Straylight to AlphaCentauri = 107
         Straylight to Arbre = 14
         AlphaCentauri to Arbre = 46", 0);
- */
+ 
 }
 
     #[test]
@@ -143,4 +92,3 @@ mod tests {
 //        dotest("", 2); 
     }
 }
-/* */
