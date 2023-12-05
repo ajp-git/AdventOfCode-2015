@@ -166,10 +166,10 @@ fn play (weapons:Vec<Item>, armors:Vec<Item>, rings:Vec<Item>){
 
     let mut result:Vec<_> = configs
         .iter()
-        .filter(|c|c.winner==Some(Winner::Me))
-        .sorted_by_key(|c| c.total_cost)
+        .filter(|c|c.winner==Some(Winner::Boss))
+        .sorted_by_key(|c| std::cmp::Reverse(c.total_cost))
         .take(5)
         .collect();
-    println!("Configs :\n{:?}", result);
+    println!("Result :\n{:?}", result);
 
 }
