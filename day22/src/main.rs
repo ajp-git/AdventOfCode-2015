@@ -11,6 +11,7 @@ struct Player{
     poison_duration:u8,
     recharge_duration:u8,
     mana_initial:i32,
+    mana_used:i32,
 }
 impl Player {
     fn is_dead(&self) -> bool{
@@ -54,20 +55,20 @@ fn main() {
 }
 fn play_params_game(spells:String, boss_hit:i32, boss_damage:i32,player_hit:i32,player_mana:i32)->Option<u32>{
     let mut boss: Boss=Boss{hit:boss_hit, damage:boss_damage};
-    let mut me=Player{hit:player_hit, armor:0, mana:player_mana, shield_duration:0, poison_duration:0,recharge_duration:0,mana_initial:player_mana};
+    let mut me=Player{hit:player_hit, armor:0, mana:player_mana, shield_duration:0, poison_duration:0,recharge_duration:0, mana_used:0, mana_initial:player_mana};
 
     play_string(&mut boss, &mut me, &spells)
 }
 
 fn play_all_games(){
 
-    static PREVIEW_STRING:usize=20;
+    static PREVIEW_STRING:usize=40;
     static RAND_NUMBER:usize=200000;
     static PREVIEW_LINES:usize=20;
 
     let mut v_spells:Vec<String>=Vec::new();
     let boss: Boss=Boss{hit:55, damage:8};
-    let me=Player{hit:50, armor:0, mana:500, shield_duration:0, poison_duration:0,recharge_duration:0,mana_initial:500};
+    let me=Player{hit:50, armor:0, mana:500, shield_duration:0, poison_duration:0,recharge_duration:0, mana_used:0, mana_initial:500};
 
     for i in 0..RAND_NUMBER{
         print!("\r{i} / {RAND_NUMBER}");
@@ -79,18 +80,18 @@ fn play_all_games(){
         let mut me_clone = me.clone();
         match play_string(&mut boss_clone, &mut me_clone, s) {
             Some(v) => {
-//                println!("Spell sequence [{}]: {} resulted in mana spent: {}", index, s, v);
+//                // println!("Spell sequence [{}]: {} resulted in mana spent: {}", index, s, v);
                 Some((s.clone(), v))
             },
             None => {
-//                println!("Spell sequence [{}]: {} resulted in player death or invalid sequence", index, s);
+//                // println!("Spell sequence [{}]: {} resulted in player death or invalid sequence", index, s);
                 None
             }
         }
     }).collect();
     
     if results.is_empty() {
-//        println!("No successful spell sequences found. All players died or sequences were invalid.");
+         println!("No successful spell sequences found. All players died or sequences were invalid.");
     } else {
         // Sort the results by the mana spent (u32 values)
         results.sort_by_key(|&(_, mana_spent)| mana_spent);
@@ -98,10 +99,10 @@ fn play_all_games(){
         // Take the first results
         let first_results = results.iter().take(PREVIEW_LINES);
     
-        // Print the first results
+        // //print the first results
         for (spell, mana_spent) in first_results {
             let spell_preview: String = spell.chars().take(PREVIEW_LINES).collect();
-            println!("Mana spent: {}, with spell sequence: {}", mana_spent, spell_preview);
+             println!("Mana spent: {}, with spell sequence: {}", mana_spent, spell_preview);
         }
 
         // Create a new Vec that includes the spell_preview and mana_spent
@@ -115,8 +116,8 @@ fn play_all_games(){
         // Sort the results by spell_preview
         results_with_preview.sort_by_key(|k| k.2.clone());
 
-        // Print the sorted results
-        println!("Results sorted by spell preview:");
+        // //print the sorted results
+        // println!("Results sorted by spell preview:");
         for (_spell, mana_spent, spell_preview) in results_with_preview {
             println!("Mana spent: {}, with spell sequence: {}", mana_spent, spell_preview);
         }
@@ -125,11 +126,11 @@ fn play_all_games(){
 fn handle_poison (me: &mut Player, boss: &mut Boss) -> bool{
     if me.poison_duration>0{
         me.poison_duration-=1;
-        //println!("Poison deals 3 damage; its timer is now {}", me.poison_duration);
+        // println!("Poison deals 3 damage; its timer is now {}", me.poison_duration);
         boss.hit-=3;
-        //println!("Boss hit : {}",boss.hit);
+        // println!("Boss hit : {}",boss.hit);
         if boss.is_dead() {
-            //println!("That killed the boss");
+            // println!("That killed the boss");
 
             return true;
         }
@@ -140,7 +141,7 @@ fn handle_poison (me: &mut Player, boss: &mut Boss) -> bool{
 fn handle_recharge(me: &mut Player, _boss: &mut Boss) -> bool{
     if me.recharge_duration>0 {
         me.recharge_duration-=1;
-        //println!("Recharge provides 101 mana; its timer is now {}.", me.recharge_duration);
+        // println!("Recharge provides 101 mana; its timer is now {}.", me.recharge_duration);
         me.mana+=101;
     };
     false
@@ -149,19 +150,21 @@ fn handle_recharge(me: &mut Player, _boss: &mut Boss) -> bool{
 fn handle_shield(me: &mut Player,_boss: &mut Boss) -> bool {
     if me.shield_duration>0 { 
         me.shield_duration-=1;
-        //println!("Shield timer is now {}", me.shield_duration );
-    }else {
-        me.armor=0;
-    }      
+        // println!("Shield timer is now {}", me.shield_duration );
+        if me.shield_duration==0 {
+            // println!("Shield wears off, decreasing armor by 7");
+            me.armor=0;
+        }
+    }
     false
 }
 
 fn play_player(me: &mut Player, boss: &mut Boss, spell:char) -> Option<u32>{
-    //println!("\n-- Player turn --");
-    //println!("- Player has {} hit points, {} armor, {} manas",me.hit,me.armor, me.mana);
-    //println!("- Boss has {} hit points",boss.hit);
+    // println!("\n-- Player turn --");
+    // println!("- Player has {} hit points, {} armor, {} manas",me.hit,me.armor, me.mana);
+    // println!("- Boss has {} hit points",boss.hit);
 
-    if handle_poison(me, boss) {return Some((me.mana_initial-me.mana)as u32);}
+    if handle_poison(me, boss) {return Some(me.mana_used as u32);}
     handle_recharge(me, boss);
     handle_shield(me, boss);
 
@@ -169,74 +172,78 @@ fn play_player(me: &mut Player, boss: &mut Boss, spell:char) -> Option<u32>{
 
     match spell {
         'M' => {mana_turn=53; boss.hit-=4;
-      //      println!("Player casts Magic Missile, casts 4 damages");
+            // println!("Player casts Magic Missile, casts 4 damages");
         },
         'D' => {mana_turn=73; me.hit+=2; boss.hit-=2;
-        //    println!("Player casts Drain, casts 2 damages and heals you 2 points");
+            // println!("Player casts Drain, casts 2 damages and heals you 2 points");
         },
         'S' => {
             mana_turn=113; 
-            //println!("Player casts Shield"); 
+            // println!("Player casts Shield"); 
             me.armor+=7; 
             me.shield_duration=6; },
         'P' => {mana_turn=173; 
-            //println!("Player casts Poison"); 
+            // println!("Player casts Poison"); 
             me.poison_duration=6;},
         'R' => {mana_turn=229; 
-            //println!("Player casts Recharge"); 
+            // println!("Player casts Recharge"); 
             me.recharge_duration=5;},
         _ => panic!(),
     }
 
     // Manas
     me.mana-=mana_turn as i32;
+    me.mana_used+=mana_turn as i32;
     if me.mana<0 {return None;}
 
-    Some((me.mana_initial-me.mana)as u32)
+    Some(me.mana_used as u32)
 }
 
 fn play_boss(me: &mut Player, boss: &mut Boss) -> Option<u32>{
-    //println!("\n-- Boss turn --");
-    //println!("- Player has {} hit points, {} armor, {} manas",me.hit,me.armor, me.mana);
-    //println!("- Boss has {} hit points",boss.hit);
-    if handle_poison(me, boss) {return Some((me.mana_initial-me.mana)as u32);}
+    // println!("\n-- Boss turn --");
+    // println!("- Player has {} hit points, {} armor, {} manas",me.hit,me.armor, me.mana);
+    // println!("- Boss has {} hit points",boss.hit);
+    if handle_poison(me, boss) {return Some(me.mana_used as u32);}
     handle_recharge(me, boss);
     handle_shield(me, boss);
 
     if boss.hit<=0 {
-//        println!("Boss killed");
-        return Some((me.mana_initial-me.mana)as u32);}
+//        // println!("Boss killed");
+        return Some(me.mana_used as u32);}
     // Boss attack
     me.hit-=max(1,
         boss.damage as i32
         - (if me.shield_duration>0{me.armor as i32}else{0 as i32}) as i32
     );
     if me.hit<=0 {
-//        println!("me killed");
+//        // println!("me killed");
         return None;}
     
     return Some(0);
 }
 
 fn play_string(boss: &mut Boss, me: &mut Player, spells: &String) -> Option<u32> {
-//    println!("\nRunning {}",spells);
+    // println!("\nRunning {}",spells);
 
     for c in spells.chars(){
-        let _p = play_player(me, boss, c); // me is already a mutable reference
         if me.is_dead() {
-//            println!("Player died");
+//            // println!("Player died");
+            return None;
+        }        let _p = play_player(me, boss, c); // me is already a mutable reference
+        if me.is_dead() {
+//            // println!("Player died");
             return None;
         } /*else {
-            println!("Player spent {}", me.mana_spent);
+            // println!("Player spent {}", me.mana_spent);
         }*/
 
         play_boss(me, boss); // me is already a mutable reference
         if boss.is_dead() {
-//            println!("\t\tBoss killed");
-            return Some((me.mana_initial-me.mana) as u32);
+//            // println!("\t\tBoss killed");
+            return Some((me.mana_used) as u32);
         }
     }
-    Some((me.mana_initial-me.mana) as u32)
+    Some((me.mana_used) as u32)
 }
 
 fn generate_string() ->String {
@@ -267,12 +274,12 @@ fn generate_string() ->String {
             _ => {},
         }
         if turn{
-            if s_counter >0 { s_counter-=1;}
-            if p_counter >0 { p_counter-=1;}
-            if r_counter >0 { r_counter-=1;}
+            if s_counter >0 { s_counter-=2;}
+            if p_counter >0 { p_counter-=2;}
+            if r_counter >0 { r_counter-=2;}
         }
     }
-//    println!("Spells : {}",out);
+//    // println!("Spells : {}",out);
     out
 }
 
@@ -307,14 +314,34 @@ mod tests {
         let boss_hit = 14;
         let boss_damage = 8;
         let player_hit = 10;
-        let player_mana = 136;
+        let player_mana = 250;
 
         // Call the function with the test parameters
         let result = play_params_game(spells, boss_hit, boss_damage, player_hit, player_mana);
 
         // Assert the expected outcome (this will depend on your game logic)
         // For example, if you expect the player to win with a certain mana spent:
-        assert_eq!(result, Some(226));
+        assert_eq!(result, Some(641));
+
+        // Or, if you expect the player to lose (result is None):
+        // assert!(result.is_none());
+    }
+    #[test]
+    fn test_play_params_game3() {
+        // Define the spell sequence and game parameters
+        let spells = "PMMPMMMSMMPRMDMMRPSD
+        ".to_string();
+        let boss_hit = 14;
+        let boss_damage = 8;
+        let player_hit = 10;
+        let player_mana = 250;
+
+        // Call the function with the test parameters
+        let result = play_params_game(spells, boss_hit, boss_damage, player_hit, player_mana);
+
+        // Assert the expected outcome (this will depend on your game logic)
+        // For example, if you expect the player to win with a certain mana spent:
+        assert_eq!(result, Some(641));
 
         // Or, if you expect the player to lose (result is None):
         // assert!(result.is_none());
